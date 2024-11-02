@@ -46,6 +46,11 @@ type SpriteData = {
   meta: MetaData
 }
 
+type SpriteMetaDimension = {
+  row: number
+  col: number
+}
+
 // utils
 export const getFirstItem = (param: FrameData[] | Record<string, FrameData[]>) => {
   if (Array.isArray(param)) {
@@ -68,13 +73,8 @@ export const checkIfFrameIsEmpty = (frameData: Uint8ClampedArray) => {
   return true
 }
 
-type SpriteMetaDimension = {
-  row: number
-  col: number
-}
-
 export function useSpriteLoader<Url extends string>(
-  input?: Url | null,
+  input: Url | null,
   json?: string | null,
   animationNames?: string[] | null,
   numberOfFrames?: number | null,
@@ -262,20 +262,16 @@ export function useSpriteLoader<Url extends string>(
 
         return sprites
       } else {
-        // we need to convert it into an array
         let spritesArr: FrameData[] = []
 
         if (data?.frames) {
           if (Array.isArray(data.frames)) {
-            // If frames is already an array, use it directly
             spritesArr = [...data.frames]
           } else {
-            // If frames is an object, spread all the arrays into one
             spritesArr = Object.values(data.frames).flat()
           }
         }
 
-        // Now calculateScaleRatio will work with the properly typed array
         return calculateScaleRatio(spritesArr)
       }
     }
@@ -346,7 +342,7 @@ export function useSpriteLoader<Url extends string>(
           spriteDataRef.current = nonJsonFrames
         }
 
-        //scale ratio for stadalone sprite
+        //scale ratio for standalone sprite
         if (spriteDataRef.current && spriteDataRef.current.frames) {
           spriteDataRef.current.frames = calculateScaleRatio(spriteDataRef.current.frames)
         }
@@ -363,7 +359,7 @@ export function useSpriteLoader<Url extends string>(
 
       if ('encoding' in _spriteTexture) {
         _spriteTexture.encoding = 3001 // sRGBEncoding
-      } else {
+      } else if ('colorSpace' in _spriteTexture) {
         //@ts-ignore
         _spriteTexture.colorSpace = THREE.SRGBColorSpace
       }
