@@ -5,7 +5,7 @@ import { useState } from 'react'
 import * as React from 'react'
 import * as THREE from 'three'
 
-type SourceSize = {
+type Size = {
   w: number
   h: number
 }
@@ -25,7 +25,7 @@ type FrameData = {
     w: number
     h: number
   }
-  sourceSize: SourceSize
+  sourceSize: Size
 }
 
 type MetaData = {
