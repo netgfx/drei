@@ -16,6 +16,7 @@ const OutlinesMaterial = /* @__PURE__ */ shaderMaterial(
   `#include <common>
    #include <morphtarget_pars_vertex>
    #include <skinning_pars_vertex>
+   #include <clipping_planes_pars_vertex>
    uniform float thickness;
    uniform bool screenspace;
    uniform vec2 size;
@@ -31,6 +32,7 @@ const OutlinesMaterial = /* @__PURE__ */ shaderMaterial(
 	   #include <morphtarget_vertex>
 	   #include <skinning_vertex>
      #include <project_vertex>
+     #include <clipping_planes_vertex>
      vec4 tNormal = vec4(normal, 0.0);
      vec4 tPosition = vec4(transformed, 1.0);
      #ifdef USE_INSTANCING
@@ -50,7 +52,9 @@ const OutlinesMaterial = /* @__PURE__ */ shaderMaterial(
    }`,
   `uniform vec3 color;
    uniform float opacity;
+   #include <clipping_planes_pars_fragment>
    void main(){
+     #include <clipping_planes_fragment>
      gl_FragColor = vec4(color, opacity);
      #include <tonemapping_fragment>
      #include <${version >= 154 ? 'colorspace_fragment' : 'encodings_fragment'}>
@@ -70,6 +74,7 @@ type OutlinesProps = JSX.IntrinsicElements['group'] & {
   thickness?: number
   /** Geometry crease angle (0 === no crease), default: Math.PI */
   angle?: number
+  clippingPlanes?: THREE.Plane[]
   toneMapped?: boolean
   polygonOffset?: boolean
   polygonOffsetFactor?: number
@@ -87,6 +92,7 @@ export function Outlines({
   renderOrder = 0,
   thickness = 0.05,
   angle = Math.PI,
+  clippingPlanes,
   ...props
 }: OutlinesProps) {
   const ref = React.useRef<THREE.Group>()
@@ -129,6 +135,8 @@ export function Outlines({
           group.add(mesh)
         }
         mesh.geometry = angle ? toCreasedNormals(parent.geometry, angle) : parent.geometry
+        mesh.morphTargetInfluences = parent.morphTargetInfluences
+        mesh.morphTargetDictionary = parent.morphTargetDictionary
       }
     }
   })
@@ -140,6 +148,12 @@ export function Outlines({
     const mesh = group.children[0] as THREE.Mesh<THREE.BufferGeometry, THREE.Material>
     if (mesh) {
       mesh.renderOrder = renderOrder
+
+      const parent = group.parent as THREE.Mesh & THREE.SkinnedMesh & THREE.InstancedMesh
+      applyProps(mesh as any, {
+        morphTargetInfluences: parent.morphTargetInfluences,
+        morphTargetDictionary: parent.morphTargetDictionary,
+      })
       applyProps(mesh.material as any, {
         transparent,
         thickness,
@@ -150,6 +164,8 @@ export function Outlines({
         toneMapped,
         polygonOffset,
         polygonOffsetFactor,
+        clippingPlanes,
+        clipping: clippingPlanes && clippingPlanes.length > 0,
       })
     }
   })
